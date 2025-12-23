@@ -1,0 +1,84 @@
+# binary classifier 
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+np.random.seed(42)
+
+
+n_samples = 200
+
+length_A = np.random.normal(6.0, 0.3, n_samples//2)
+width_A  = np.random.normal(2.0, 0.2, n_samples//2)
+species_A = np.zeros(n_samples//2)  # Classe 0
+
+
+length_B = np.random.normal(6.5, 0.3, n_samples//2)
+width_B  = np.random.normal(2.2, 0.2, n_samples//2)
+species_B = np.ones(n_samples//2)  # Classe 1
+
+
+X = np.vstack((np.column_stack((length_A, width_A)),
+               np.column_stack((length_B, width_B))))
+y = np.hstack((species_A, species_B))
+
+#vstack Empilha arrays uma embaixo da outra.
+#hstack Empilha arrays lado a lado.
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+
+
+model = LogisticRegression()
+model.fit(X_train_scaled, y_train)
+
+
+
+y_pred = model.predict(X_test_scaled)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]  # Probabilidade da classe 1
+
+
+
+print("Confusion Matrix:")
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+
+
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure(figsize=(6,6))
+plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
+plt.plot([0,1], [0,1], 'k--', label='Random chance')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Logistic Regression')
+plt.legend(loc='lower right')
+plt.show()
+
+
+
+plt.figure(figsize=(6,6))
+plt.scatter(X_test_scaled[:,0], X_test_scaled[:,1], c=y_test, cmap='bwr', edgecolor='k', alpha=0.7)
+plt.xlabel('Length (scaled)')
+plt.ylabel('Width (scaled)')
+plt.title('Test data points')
+plt.show()
